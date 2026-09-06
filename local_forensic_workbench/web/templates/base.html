@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Local Forensic Data Correlation Workbench{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/cyber_dark.css">
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span>⚡ FORENSIC WORKBENCH</span>
+      </div>
+      <div style="margin-bottom: 8px;">
+        <span class="brand-badge">LOCAL-ONLY SECURE</span>
+      </div>
+      <div class="subtitle">Digital Forensics & Privacy Audit</div>
+
+      <nav class="nav">
+        <a href="/" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">📊 Dashboard</a>
+        <a href="/search" class="nav-link {% if active_page == 'search' %}active{% endif %}">🔍 Global Search</a>
+        <a href="/field-search" class="nav-link {% if active_page == 'field_search' %}active{% endif %}">🎯 Field Search</a>
+        <a href="/containers" class="nav-link {% if active_page == 'containers' %}active{% endif %}">📁 Containers</a>
+        <a href="/scanner" class="nav-link {% if active_page == 'scanner' %}active{% endif %}">⚡ Forensic Scanner</a>
+        <a href="/export" class="nav-link {% if active_page == 'export' %}active{% endif %}">💾 Export & Report</a>
+        <a href="/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}">⚙️ Settings</a>
+        <a href="/logs" class="nav-link {% if active_page == 'logs' %}active{% endif %}">📜 Audit Logs</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div>Host: 127.0.0.1 (Air-Gapped)</div>
+        <div>No Cloud / No External Calls</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="topbar">
+        <h1 class="page-title">{% block page_title %}Workbench{% endblock %}</h1>
+        <div class="status-pill">
+          <span class="status-indicator"></span>
+          <span>AIR-GAPPED OPERATIONAL</span>
+        </div>
+      </header>
+
+      <div class="content-container">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+  <script src="/static/js/main.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

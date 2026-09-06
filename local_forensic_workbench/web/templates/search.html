@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Global Search - Local Forensic Workbench{% endblock %}
+{% block page_title %}Forensic Data Search & Correlation{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="search-bar">
+    <input type="text" id="search-input" class="input-text" style="flex: 1;" placeholder="Enter target query (e.g. alex.dev99@example.com, +79161234567, 185.22.14.92, DarkLord_99)...">
+    <select id="search-mode" class="select-input">
+      <option value="global">Mode: Global Search (All Fields)</option>
+      <option value="email">Mode: Email Search</option>
+      <option value="phone">Mode: Phone & WhatsApp</option>
+      <option value="number">Mode: Number (Phone, ID, Tax, SSN, Car)</option>
+      <option value="name">Mode: Full Name & Contact</option>
+      <option value="address">Mode: Address & Location</option>
+      <option value="passport">Mode: Passport & Document</option>
+      <option value="username">Mode: Username & Account</option>
+      <option value="ip">Mode: IP Address</option>
+      <option value="domain">Mode: Domain & URL</option>
+      <option value="social">Mode: Social Identifiers (VK, Telegram, Steam)</option>
+      <option value="auth">Mode: Auth Artifacts & Credentials</option>
+      <option value="vehicle">Mode: Vehicle & VIN</option>
+      <option value="company">Mode: Company Name</option>
+    </select>
+    <button id="btn-search" class="btn btn-primary" onclick="doSearch()">Search</button>
+  </div>
+  <div style="display: flex; gap: 20px; font-size: 0.85rem; color: var(--text-muted);">
+    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+      <input type="checkbox" id="chk-exact"> Exact Match Only
+    </label>
+    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+      <input type="checkbox" id="chk-fuzzy"> Optional Fuzzy Name Matching
+    </label>
+  </div>
+</div>
+
+<div id="results-header" style="margin-bottom: 16px; display: none; justify-content: space-between; align-items: center;">
+  <div style="font-size: 0.95rem; color: var(--text-muted);" id="results-meta"></div>
+  <a id="btn-export-results" class="btn btn-secondary" style="font-size: 0.8rem;" href="#" target="_blank">Export Matching JSON</a>
+</div>
+
+<div id="results-container"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function doSearch() {
+  const query = document.getElementById('search-input').value.trim();
+  const mode = document.getElementById('search-mode').value;
+  const exact = document.getElementById('chk-exact').checked;
+  const fuzzy = document.getElementById('chk-fuzzy').checked;
+  
+  if (!query) return;
+
+  const container = document.getElementById('results-container');
+  container.innerHTML = '<div class="card" style="text-align: center; color: var(--text-muted);">Scanning forensic index...</div>';
+
+  try {
+    const url = `/api/search?q=${encodeURIComponent(query)}&mode=${mode}&exact=${exact}&fuzzy=${fuzzy}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    document.getElementById('results-header').style.display = 'flex';
+    document.getElementById('results-meta').innerText = 
+      `Found ${data.result_count} correlated record cluster(s) across ${data.scan_sources} sources in ${data.execution_time_ms}ms`;
+    
+    document.getElementById('btn-export-results').href = `/api/export?q=${encodeURIComponent(query)}&mode=${mode}`;
+
+    if (data.results.length === 0) {
+      container.innerHTML = '<div class="card" style="text-align: center; color: var(--text-muted);">No matching records found in indexed containers.</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    data.results.forEach((rec, idx) => {
+      const p = rec.primary_match;
+      const card = document.createElement('div');
+      card.className = 'card';
+      
+      let connectedHtml = '';
+      for (const [k, v] of Object.entries(rec.connected_fields)) {
+        if (k !== p.field_type) {
+          connectedHtml += `<div style="display: flex; gap: 8px; margin-bottom: 6px;">
+            <span class="badge badge-blue" style="width: 140px; text-align: left;">${k}</span>
+            <span class="mono" style="color: var(--text-main); font-weight: 500;">${escapeHtml(v)}</span>
+          </div>`;
+        }
+      }
+
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid var(--border-dim); padding-bottom: 10px;">
+          <div>
+            <span class="badge badge-cyan" style="font-size: 0.8rem; text-transform: uppercase;">${p.field_type}</span>
+            <span class="mono" style="font-size: 1.1rem; font-weight: 700; margin-left: 8px; color: var(--accent-cyan);">${escapeHtml(p.raw_value)}</span>
+          </div>
+          <a href="/record/${rec.record_id}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;">View Cluster Graph →</a>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Connected Entities in Cluster</div>
+            ${connectedHtml || '<div style="color: var(--text-dim);">No secondary entities in this cluster.</div>'}
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Forensic Evidence Source</div>
+            <div class="mono" style="font-size: 0.8rem; margin-bottom: 6px; color: var(--text-muted);">
+              File: <strong style="color: var(--text-main);">${escapeHtml(p.source_file)}</strong> (Line: ${p.line_number})
+            </div>
+            <div style="font-size: 0.8rem; margin-bottom: 10px; color: var(--text-muted);">
+              Container: <strong>${escapeHtml(p.container_name)}</strong>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Surrounding Context:</div>
+            <pre class="mono" style="background: var(--bg-elevated); padding: 8px; border-radius: 4px; font-size: 0.75rem; white-space: pre-wrap; word-break: break-all;">${escapeHtml(p.context_snippet)}</pre>
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+  } catch (err) {
+    container.innerHTML = `<div class="card" style="color: var(--accent-red);">Search failed: ${err.message}</div>`;
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Auto search if query param provided
+window.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const q = urlParams.get('q');
+  const m = urlParams.get('mode');
+  if (q) {
+    document.getElementById('search-input').value = q;
+    if (m) document.getElementById('search-mode').value = m;
+    doSearch();
+  }
+});
+</script>
+{% endblock %}

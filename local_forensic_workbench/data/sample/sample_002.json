@@ -1,0 +1,23 @@
+{
+  "phone": "+79161234567",
+  "fio": "Ivanov Ivan Ivanovich",
+  "passport": "4510 123456",
+  "passport_date": "2015-04-12",
+  "snils": "123-456-789 00",
+  "inn": "771234567890",
+  "car_number": "А123БВ77",
+  "vin": "XTA210930Y2123456",
+  "address": "Moscow, Tverskaya st, 1, apt 4",
+  "social": {
+    "vk": "vk.com/id12345678",
+    "telegram": "@ivan_official",
+    "instagram": "ivan.msk.99"
+  },
+  "relatives": [
+    {
+      "role": "mother",
+      "name": "Ivanova Maria Petrovna",
+      "phone": "+79167654321"
+    }
+  ]
+}

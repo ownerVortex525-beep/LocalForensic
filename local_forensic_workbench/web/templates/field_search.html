@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Field-Specific Search - Local Forensic Workbench{% endblock %}
+{% block page_title %}Targeted Field Forensic Lookup{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div style="margin-bottom: 16px;">
+    <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Select Forensic Entity Type:</label>
+    <select id="field-select" class="select-input" style="width: 100%; max-width: 400px;">
+      {% for ft in field_types %}
+      <option value="{{ ft }}">{{ ft }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="search-bar">
+    <input type="text" id="field-query" class="input-text" style="flex: 1;" placeholder="Enter value for selected field type...">
+    <button class="btn btn-primary" onclick="doFieldSearch()">Execute Targeted Search</button>
+  </div>
+</div>
+
+<div id="results-container"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function doFieldSearch() {
+  const field = document.getElementById('field-select').value;
+  const q = document.getElementById('field-query').value.trim();
+  if (!q) return;
+
+  const container = document.getElementById('results-container');
+  container.innerHTML = '<div class="card" style="text-align: center;">Executing field query...</div>';
+
+  const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&mode=custom&field=${encodeURIComponent(field)}`);
+  const data = await res.json();
+
+  if (data.results.length === 0) {
+    container.innerHTML = `<div class="card" style="text-align:center;">No records found with field '${field}' matching '${q}'.</div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  data.results.forEach(rec => {
+    const p = rec.primary_match;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+        <div>
+          <span class="badge badge-cyan">${p.field_type}</span>
+          <span class="mono" style="margin-left: 8px; font-weight: bold; color: var(--accent-cyan);">${p.raw_value}</span>
+        </div>
+        <a href="/record/${rec.record_id}" class="btn btn-secondary" style="font-size:0.75rem;">View Cluster →</a>
+      </div>
+      <div class="mono" style="font-size:0.8rem; color:var(--text-muted);">
+        File: ${p.source_file}:${p.line_number} (Container: ${p.container_name})
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+</script>
+{% endblock %}

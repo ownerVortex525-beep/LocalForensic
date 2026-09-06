@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Storage Containers - Local Forensic Workbench{% endblock %}
+{% block page_title %}Storage Containers Management (500+ Capacity){% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--accent-cyan);">Register New Evidence Storage Container</h2>
+  <form id="form-add-container" onsubmit="handleAddContainer(event)" style="display: grid; grid-template-columns: 2fr 3fr 1fr auto; gap: 12px;">
+    <input type="text" id="c-name" class="input-text" placeholder="Container Name (e.g. Incident Evidence 01)" required>
+    <input type="text" id="c-path" class="input-text" placeholder="Absolute or relative path (e.g. data/sample or /var/log)" required>
+    <select id="c-type" class="select-input">
+      <option value="folder">Folder</option>
+      <option value="file">Single File</option>
+    </select>
+    <button type="submit" class="btn btn-primary">+ Add Container</button>
+  </form>
+</div>
+
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h2 style="font-size: 1.1rem;">Registered Evidence Storage Sources</h2>
+    <button class="btn btn-secondary" onclick="loadContainers()">🔄 Refresh</button>
+  </div>
+  <table class="table-custom">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Path</th>
+        <th>Type</th>
+        <th>Files</th>
+        <th>State</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="container-table-body">
+      <tr><td colspan="7" style="text-align: center;">Loading containers...</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadContainers() {
+  const res = await fetch('/api/containers');
+  const list = await res.json();
+  const tbody = document.getElementById('container-table-body');
+  tbody.innerHTML = '';
+  
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No containers configured. Add one above.</td></tr>';
+    return;
+  }
+
+  list.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="mono" style="font-size: 0.75rem; color: var(--text-dim);">${c.id}</td>
+      <td style="font-weight: 600;">${c.name}</td>
+      <td class="mono" style="font-size: 0.8rem; color: var(--text-muted);">${c.path}</td>
+      <td><span class="badge badge-blue">${c.type}</span></td>
+      <td class="mono">${c.file_count}</td>
+      <td>
+        <span class="badge ${c.enabled ? 'badge-green' : 'badge-amber'}">
+          ${c.enabled ? 'ENABLED' : 'DISABLED'}
+        </span>
+      </td>
+      <td style="display: flex; gap: 8px;">
+        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="toggleContainer('${c.id}', ${!c.enabled})">
+          ${c.enabled ? 'Disable' : 'Enable'}
+        </button>
+        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="removeContainer('${c.id}')">
+          Remove
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function handleAddContainer(e) {
+  e.preventDefault();
+  const name = document.getElementById('c-name').value.trim();
+  const path = document.getElementById('c-path').value.trim();
+  const type = document.getElementById('c-type').value;
+
+  const res = await fetch('/api/containers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, path, type })
+  });
+  if (res.ok) {
+    document.getElementById('c-name').value = '';
+    document.getElementById('c-path').value = '';
+    loadContainers();
+  } else {
+    const err = await res.json();
+    alert('Error: ' + err.error);
+  }
+}
+
+async function toggleContainer(id, enable) {
+  const endpoint = enable ? '/api/containers/enable' : '/api/containers/disable';
+  await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id })
+  });
+  loadContainers();
+}
+
+async function removeContainer(id) {
+  if (!confirm('Remove container ' + id + '?')) return;
+  await fetch('/api/containers/remove', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id })
+  });
+  loadContainers();
+}
+
+loadContainers();
+</script>
+{% endblock %}

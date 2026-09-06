@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Local Forensic Data Correlation Workbench{% endblock %}
+{% block page_title %}Forensic Correlation Dashboard{% endblock %}
+
+{% block content %}
+<div class="grid-metrics">
+  <div class="metric-card">
+    <div class="metric-label">Containers Configured</div>
+    <div class="metric-value" id="val-containers">-</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Files Indexed</div>
+    <div class="metric-value" id="val-files">-</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Entities Extracted</div>
+    <div class="metric-value" id="val-entities" style="color: var(--accent-cyan);">-</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Record Clusters</div>
+    <div class="metric-value" id="val-records" style="color: var(--accent-green);">-</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--accent-cyan);">⚡ Quick Forensic Query</h2>
+  <form id="quick-search-form" style="display: flex; gap: 12px;" onsubmit="handleQuickSearch(event)">
+    <input type="text" id="quick-query" class="input-text" style="flex: 1;" placeholder="Enter email, phone, passport, name, IP, VIN, or hash..." required>
+    <button type="submit" class="btn btn-primary">Search All Containers</button>
+  </form>
+</div>
+
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h2 style="font-size: 1.1rem;">Storage Containers Status</h2>
+    <a href="/containers" class="btn btn-secondary">Manage Containers</a>
+  </div>
+  <table class="table-custom">
+    <thead>
+      <tr>
+        <th>Container Name</th>
+        <th>Path</th>
+        <th>Type</th>
+        <th>Files</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="containers-tbody">
+      <tr><td colspan="5" style="text-align: center; color: var(--text-dim);">Loading containers...</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadDashboard() {
+  const statusRes = await fetch('/api/status');
+  const statusData = await statusRes.json();
+  
+  document.getElementById('val-containers').innerText = statusData.stats.total_containers;
+  document.getElementById('val-files').innerText = statusData.stats.total_files_scanned;
+  document.getElementById('val-entities').innerText = statusData.stats.total_entities;
+  document.getElementById('val-records').innerText = statusData.stats.total_records;
+
+  const contRes = await fetch('/api/containers');
+  const containers = await contRes.json();
+  const tbody = document.getElementById('containers-tbody');
+  tbody.innerHTML = '';
+  if (containers.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No containers configured yet.</td></tr>';
+  } else {
+    containers.forEach(c => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight: 600;">${c.name}</td>
+        <td class="mono" style="font-size: 0.8rem; color: var(--text-muted);">${c.path}</td>
+        <td><span class="badge badge-blue">${c.type}</span></td>
+        <td class="mono">${c.file_count}</td>
+        <td><span class="badge ${c.enabled ? 'badge-green' : 'badge-amber'}">${c.enabled ? 'ENABLED' : 'DISABLED'}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+function handleQuickSearch(e) {
+  e.preventDefault();
+  const q = document.getElementById('quick-query').value.trim();
+  if (q) window.location.href = `/search?q=${encodeURIComponent(q)}`;
+}
+
+loadDashboard();
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{
+  "containers": [
+    {
+      "id": "container_sample_01",
+      "name": "Synthetic Forensic Samples",
+      "path": "data/sample",
+      "type": "folder",
+      "enabled": true,
+      "tags": [
+        "sample",
+        "audit",
+        "local"
+      ],
+      "file_count": 5,
+      "last_scanned": "2026-09-06T02:49:58Z",
+      "parse_errors": 0
+    }
+  ]
+}

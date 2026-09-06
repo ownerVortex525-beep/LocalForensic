@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Settings - Local Forensic Workbench{% endblock %}
+{% block page_title %}Workbench Configuration & Privacy Controls{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--accent-cyan);">Workbench Controls</h2>
+  <div style="display: flex; flex-direction: column; gap: 16px; max-width: 600px;">
+    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+      <span>Enable Forensic Redaction (Mask sensitive values in output)</span>
+      <input type="checkbox" id="set-redaction">
+    </label>
+    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+      <span>Enable Audit Logging</span>
+      <input type="checkbox" id="set-audit" checked>
+    </label>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span>Context Window Lines (15 lines sliding cluster)</span>
+      <input type="number" id="set-window" class="input-text" style="width: 80px;" value="15" min="5" max="50">
+    </div>
+    <button class="btn btn-primary" style="margin-top: 10px; width: fit-content;" onclick="saveSettings()">Save Configuration</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadSettings() {
+  const res = await fetch('/api/settings');
+  const data = await res.json();
+  document.getElementById('set-redaction').checked = !!data.redaction_enabled;
+  document.getElementById('set-audit').checked = data.audit_logging_enabled !== false;
+  if (data.context_window_lines) document.getElementById('set-window').value = data.context_window_lines;
+}
+
+async function saveSettings() {
+  const redaction_enabled = document.getElementById('set-redaction').checked;
+  const audit_logging_enabled = document.getElementById('set-audit').checked;
+  const context_window_lines = parseInt(document.getElementById('set-window').value, 10);
+
+  await fetch('/api/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ redaction_enabled, audit_logging_enabled, context_window_lines })
+  });
+  alert('Settings saved.');
+}
+
+loadSettings();
+</script>
+{% endblock %}

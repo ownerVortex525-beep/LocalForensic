@@ -1,0 +1,10 @@
+[+] Email: alex.dev99@example.com
+[+] Password: Str0ngP@ssw0rd!2024
+[+] IP: 185.22.14.92
+[+] Country: RU | City: Moscow
+[+] App: Steam | Nick: DarkLord_99 | SteamID: STEAM_0:1:12345678
+[+] Domain: example.com
+---
+user_ivan@mail.ru:Qwerty12345 | IP: 91.105.44.12 | VK_ID: id8839201 | Telegram: @ivan_dev
+---
+gamer_pro@hotmail.com | Pass: hunter2 | App: FreeFire | UID: 849201992 | Device: Xiaomi Redmi Note 10

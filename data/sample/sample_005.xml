@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<audit_records>
+  <record id="rec_001">
+    <full_name>Marcus Vance</full_name>
+    <email>m.vance@defense-grid.org</email>
+    <phone>+1-202-555-0199</phone>
+    <passport_number>A8829103</passport_number>
+    <ip_address>10.14.220.88</ip_address>
+    <company_name>Defense Grid Corp</company_name>
+    <address>1200 Pennsylvania Ave NW, Washington, DC</address>
+  </record>
+  <record id="rec_002">
+    <full_name>Elena Rostova</full_name>
+    <email>elena.r@cyber-sentinel.io</email>
+    <phone>+7-495-777-8899</phone>
+    <passport_number>4508 998811</passport_number>
+    <ip_address>195.88.24.10</ip_address>
+    <company_name>Sentinel Analytics LLC</company_name>
+    <address>Nevsky Prospekt, 28, St. Petersburg</address>
+  </record>
+</audit_records>

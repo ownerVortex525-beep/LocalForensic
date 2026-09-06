@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs - Local Forensic Workbench{% endblock %}
+{% block page_title %}Local Forensic Audit Logs{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <div>
+      <h2 style="font-size: 1.1rem; color: var(--accent-cyan);">Immutable Local Investigation Audit Trail</h2>
+      <div style="font-size: 0.8rem; color: var(--text-muted);">Records operator actions, search queries, container modifications, and scan events.</div>
+    </div>
+    <button class="btn btn-secondary" onclick="loadLogs()">🔄 Refresh Logs</button>
+  </div>
+  <table class="table-custom">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Timestamp (UTC)</th>
+        <th>Operator</th>
+        <th>Action</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody id="logs-tbody">
+      <tr><td colspan="5" style="text-align: center;">Loading audit logs...</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadLogs() {
+  const res = await fetch('/api/logs');
+  const logs = await res.json();
+  const tbody = document.getElementById('logs-tbody');
+  tbody.innerHTML = '';
+  
+  if (logs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No audit logs recorded yet.</td></tr>';
+    return;
+  }
+
+  logs.forEach(l => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="mono" style="font-size: 0.75rem; color: var(--text-dim);">${l.id}</td>
+      <td class="mono" style="font-size: 0.8rem;">${l.timestamp}</td>
+      <td><span class="badge badge-cyan">${l.operator}</span></td>
+      <td><strong style="color: var(--accent-green); font-size: 0.85rem;">${l.action}</strong></td>
+      <td class="mono" style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(typeof l.details === 'string' ? l.details : JSON.stringify(l.details))}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+loadLogs();
+</script>
+{% endblock %}

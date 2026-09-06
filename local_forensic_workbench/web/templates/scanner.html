@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Forensic Scanner - Local Forensic Workbench{% endblock %}
+{% block page_title %}High-Speed Forensic File Scanner{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div>
+      <h2 style="font-size: 1.1rem; color: var(--accent-cyan);">Scan Engine Controls</h2>
+      <div style="font-size: 0.8rem; color: var(--text-muted);">Parses Plaintext, JSON, CSV, XML, and Logs incrementally with sliding context window.</div>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <button id="btn-start" class="btn btn-primary" onclick="launchScan(false)">⚡ Start Scan</button>
+      <button id="btn-force" class="btn btn-secondary" onclick="launchScan(true)">🔄 Force Rescan All</button>
+      <button id="btn-stop" class="btn btn-danger" onclick="abortScan()" style="display: none;">⏹ Stop Scan</button>
+    </div>
+  </div>
+
+  <div style="background: var(--bg-elevated); padding: 16px; border-radius: 6px; border: 1px solid var(--border-dim); margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem;">
+      <span id="scan-status-text">Scanner Status: <strong>Idle</strong></span>
+      <span id="scan-progress-pct" class="mono">0%</span>
+    </div>
+    <div style="height: 10px; background: var(--bg-surface); border-radius: 5px; overflow: hidden; border: 1px solid var(--border-dim);">
+      <div id="progress-bar" style="width: 0%; height: 100%; background: var(--accent-cyan); transition: width 0.3s ease;"></div>
+    </div>
+    <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+      <span id="current-file-text">Current file: None</span>
+      <span id="entities-found-text" class="mono">Entities extracted: 0</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let pollTimer = null;
+
+async function launchScan(force) {
+  const res = await fetch('/api/scan/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ force })
+  });
+  const data = await res.json();
+  document.getElementById('btn-start').style.display = 'none';
+  document.getElementById('btn-force').style.display = 'none';
+  document.getElementById('btn-stop').style.display = 'inline-flex';
+  
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollScanStatus, 500);
+}
+
+async function abortScan() {
+  await fetch('/api/scan/stop', { method: 'POST' });
+}
+
+async function pollScanStatus() {
+  const res = await fetch('/api/scan/status');
+  const s = await res.json();
+  
+  document.getElementById('scan-status-text').innerHTML = `Scanner Status: <strong style="color:var(--accent-cyan); text-transform:uppercase;">${s.status}</strong>`;
+  document.getElementById('scan-progress-pct').innerText = `${s.progress_pct}%`;
+  document.getElementById('progress-bar').style.width = `${s.progress_pct}%`;
+  document.getElementById('current-file-text').innerText = `Current: ${s.current_file}`;
+  document.getElementById('entities-found-text').innerText = `Entities: ${s.entities_found} | Files: ${s.files_scanned}/${s.total_files}`;
+
+  if (s.status === 'completed' || s.status === 'stopped' || s.status === 'idle') {
+    document.getElementById('btn-start').style.display = 'inline-flex';
+    document.getElementById('btn-force').style.display = 'inline-flex';
+    document.getElementById('btn-stop').style.display = 'none';
+    clearInterval(pollTimer);
+  }
+}
+
+pollScanStatus();
+</script>
+{% endblock %}

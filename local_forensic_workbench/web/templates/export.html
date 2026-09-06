@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Export - Local Forensic Workbench{% endblock %}
+{% block page_title %}Forensic Export & Audit Reports{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--accent-cyan);">Full System Forensic Audit Report</h2>
+  <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
+    Generate a complete forensic incident response audit report encompassing container metadata, detector coverage, indexed record count, and forensic integrity state.
+  </p>
+  <a href="/api/export" class="btn btn-primary" download>📥 Download Complete Audit Report (JSON)</a>
+</div>
+
+<div class="card">
+  <h2 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--accent-cyan);">Targeted Query Export</h2>
+  <div style="display: flex; gap: 12px; max-width: 600px;">
+    <input type="text" id="exp-query" class="input-text" style="flex: 1;" placeholder="Enter query term to export...">
+    <button class="btn btn-secondary" onclick="exportQuery()">Download Query JSON</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function exportQuery() {
+  const q = document.getElementById('exp-query').value.trim();
+  if (q) {
+    window.location.href = `/api/export?q=${encodeURIComponent(q)}&mode=global`;
+  }
+}
+</script>
+{% endblock %}

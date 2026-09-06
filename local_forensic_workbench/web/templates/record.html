@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Record Cluster - Local Forensic Workbench{% endblock %}
+{% block page_title %}Correlated Record Investigation{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <div>
+      <span class="mono" style="font-size: 0.8rem; color: var(--text-dim);">RECORD CLUSTER ID</span>
+      <h2 class="mono" style="color: var(--accent-cyan); font-size: 1.3rem;">{{ record_id }}</h2>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <a href="/api/export?record_id={{ record_id }}" class="btn btn-secondary">Download JSON</a>
+      <a href="/search" class="btn btn-primary">← Return to Search</a>
+    </div>
+  </div>
+
+  <div id="record-loading" style="text-align: center; color: var(--text-muted); padding: 40px;">
+    Loading correlated record entities and graph links...
+  </div>
+
+  <div id="record-content" style="display: none;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+      <div style="background: var(--bg-elevated); padding: 20px; border-radius: 6px; border: 1px solid var(--border-dim);">
+        <h3 style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">Forensic Provenance</h3>
+        <div style="font-size: 0.85rem; margin-bottom: 8px;">Source File: <strong id="rec-source" class="mono" style="color: var(--text-main);"></strong></div>
+        <div style="font-size: 0.85rem; margin-bottom: 8px;">Container: <strong id="rec-container"></strong></div>
+        <div style="font-size: 0.85rem;">Line Number: <strong id="rec-line" class="mono"></strong></div>
+      </div>
+      <div style="background: var(--bg-elevated); padding: 20px; border-radius: 6px; border: 1px solid var(--border-dim);">
+        <h3 style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">Raw Source Context</h3>
+        <pre id="rec-snippet" class="mono" style="font-size: 0.75rem; background: var(--bg-surface); padding: 12px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap;"></pre>
+      </div>
+    </div>
+
+    <h3 style="font-size: 1rem; margin-bottom: 12px; color: var(--accent-cyan);">Extracted & Correlated Entities</h3>
+    <table class="table-custom">
+      <thead>
+        <tr>
+          <th>Field Type</th>
+          <th>Raw Value</th>
+          <th>Normalized Value</th>
+          <th>Confidence</th>
+          <th>Detector</th>
+          <th>Line</th>
+        </tr>
+      </thead>
+      <tbody id="entities-tbody"></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadRecord() {
+  const recId = "{{ record_id }}";
+  try {
+    const res = await fetch(`/api/record/${recId}`);
+    if (!res.ok) throw new Error('Record not found');
+    const data = await res.json();
+
+    document.getElementById('record-loading').style.display = 'none';
+    document.getElementById('record-content').style.display = 'block';
+
+    const p = data.primary_match;
+    document.getElementById('rec-source').innerText = p.source_file;
+    document.getElementById('rec-container').innerText = p.container_name;
+    document.getElementById('rec-line').innerText = p.line_number;
+    document.getElementById('rec-snippet').innerText = p.context_snippet;
+
+    const tbody = document.getElementById('entities-tbody');
+    tbody.innerHTML = '';
+    data.all_entities.forEach(ent => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="badge badge-cyan">${ent.field_type}</span></td>
+        <td class="mono" style="font-weight: 600;">${escapeHtml(ent.raw_value)}</td>
+        <td class="mono" style="color: var(--text-muted);">${escapeHtml(ent.normalized_value)}</td>
+        <td><span class="badge ${ent.confidence === 'high' ? 'badge-green' : 'badge-amber'}">${ent.confidence}</span></td>
+        <td style="font-size: 0.8rem; color: var(--text-muted);">${ent.detector_name || 'engine'}</td>
+        <td class="mono">${ent.line_number}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    document.getElementById('record-loading').innerText = 'Error loading record: ' + e.message;
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+loadRecord();
+</script>
+{% endblock %}

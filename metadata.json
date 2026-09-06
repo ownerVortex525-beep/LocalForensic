@@ -1,0 +1,6 @@
+{
+  "name": "Local Forensic Data Correlation Workbench",
+  "description": "Authorized local-only cybersecurity and digital forensics data discovery, correlation, and privacy audit workbench.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
